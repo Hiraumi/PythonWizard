@@ -32,7 +32,7 @@
                 style="margin-bottom: 10px;"
               />
               <div style="text-align: right;">
-                <el-button size="default" type="primary" @click="confirmUsernameChange">确认</el-button>
+                <el-button size="default" type="primary" @click="updateUsername(scope.row)">确认</el-button>
                 <el-button size="default" @click="cancelPopover">返回</el-button>
               </div>
             </div>
@@ -62,7 +62,7 @@
                 style="margin-bottom: 10px;"
               />
               <div style="text-align: right;">
-                <el-button size="default" type="primary" @click="confirmEmailChange">确认</el-button>
+                <el-button size="default" type="primary" @click="updateEmail(scope.row)">确认</el-button>
                 <el-button size="default" @click="cancelPopover">返回</el-button>
               </div>
             </div>
@@ -76,7 +76,44 @@
       </el-table-column>
 
       <!-- 密码列 -->
-      <el-table-column prop="password" label="加密密码" align="center" show-overflow-tooltip/>
+      <el-table-column prop="password" label="加密密码" align="center">
+        <template #default="scope">
+          <el-tooltip
+            class="item"
+            effect="light"
+            placement="top"
+            :content="scope.row.password"
+          >
+            <span class="password-overflow">
+              {{ scope.row.password }}
+            </span>
+          </el-tooltip>
+          <el-popover
+            :visible="visiblePopover.id === scope.row.id && visiblePopover.type === 'password'"
+            title="修改密码"
+            width="300"
+          >
+            <div>
+              <el-input
+                v-model="newPassword"
+                type="password"
+                placeholder="请输入新密码"
+                size="small"
+                style="margin-bottom: 10px;"
+              />
+              <div style="text-align: right;">
+                <el-button size="default" type="primary" @click="updatePassword(scope.row)">确认</el-button>
+                <el-button size="default" @click="cancelPopover">返回</el-button>
+              </div>
+            </div>
+            <template #reference>
+              <el-icon class="edit-icon" @click.stop="showPopover(scope.row, 'password')">
+                <Edit />
+              </el-icon>
+            </template>
+          </el-popover>
+        </template>
+      </el-table-column>
 
       <!-- 角色列 -->
       <el-table-column
@@ -106,7 +143,7 @@
             <div>
               <p>是否将角色替换为 {{ scope.row.role === '教师' ? '学生' : '教师' }}？</p>
               <div style="text-align: right;">
-                <el-button size="default" type="primary" @click="confirmRoleChange">确认</el-button>
+                <el-button size="default" type="primary" @click="updateRole(scope.row)">确认</el-button>
                 <el-button size="default" @click="cancelPopover">取消</el-button>
               </div>
             </div>
@@ -126,6 +163,7 @@
           <el-tooltip
             v-if="scope.row.username === currentUsername"
             content="不能删除自己的账户"
+            effect="light"
             placement="top"
           >
             <el-button
@@ -180,6 +218,23 @@
   </el-dialog>
 </template>
 
+<style>
+  .password-overflow {
+    display: inline-block;
+    max-width: 100px; /* 设置最大宽度 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 显示省略号 */
+    vertical-align: middle; /* 对齐图标 */
+  }
+
+  .edit-icon {
+    cursor: pointer;
+    margin-left: 10px; /* 图标与文本的间距 */
+    vertical-align: middle;
+  }
+</style>
+
 <script>
 import { Edit } from "@element-plus/icons-vue";
 import axios from "axios";
@@ -199,57 +254,13 @@ export default {
       visiblePopover: {},
       newUsername: "", // 存储新用户名
       newEmail: "", // 存储新邮箱
+      newPassword: "", // 存储新密码
       currentUsername: localStorage.getItem("username") || "", // 当前登录用户名
       deleteDialogVisible: false, // 删除对话框显示状态
       userToDelete: null, // 待删除的用户信息
     };
   },
   methods: {
-    // 编辑用户信息
-    editUser(user, field) {
-      if (field === "role") {
-        // 弹出对话框，显示当前角色
-        this.$confirm(`修改用户 ${user.username} 的角色`, "确认修改", {
-          confirmButtonText: "确认",
-          cancelButtonText: "取消",
-          type: "warning",
-          inputPlaceholder: "请选择新角色",
-          inputType: "radio",
-          inputValidator: (value) => {
-            if (value === "") {
-              return "请选择一个角色";
-            }
-            return true;
-          },
-          inputOptions: {
-            teacher: "教师",
-            student: "学生",
-          },
-        })
-          .then(({ value }) => {
-            // 确认修改时调用后端接口
-            axios
-              .put("http://127.0.0.1:8000/update_user", {
-                current_username: user.username, // 当前用户的用户名
-                role: value, // 新角色
-              })
-              .then(() => {
-                this.$message.success(`用户 ${user.username} 的角色已修改为 ${value}`);
-                this.fetchUsers(); // 重新获取用户数据
-              })
-              .catch((error) => {
-                console.error("修改角色失败:", error);
-                this.$message.error("修改角色失败，请稍后重试！");
-              });
-          })
-          .catch(() => {
-            this.$message.info("已取消修改角色操作");
-          });
-      } else {
-        this.$message.warning("暂不支持修改其他字段！");
-      }
-    },
-
     // 点击删除按钮时，弹出确认对话框
     deleteUser(user) {
       this.userToDelete = user; // 记录需要删除的用户
@@ -329,10 +340,14 @@ export default {
     // 显示指定行的 Popover
     showPopover(row, type) {
       console.log("当前行数据:", row); // 调试输出当前行数据
-      this.visiblePopover = { id: row.id, username: row.username, type: type }; // 唯一标识符
-      this.currentRow = row; // 赋值当前行数据
-      this.newUsername = row.username || "";
-      this.newEmail = row.email || "";
+      this.visiblePopover = { id: row.id, type: type }; // 设置当前行和类型
+      if (type === "username") {
+        this.newUsername = row.username || ""; // 初始化用户名
+      } else if (type === "email") {
+        this.newEmail = row.email || ""; // 初始化邮箱
+      } else if (type === "role") {
+        this.currentRow = row; // 设置当前行，供角色切换使用
+      }
     },
 
     // 关闭 Popover
@@ -341,93 +356,99 @@ export default {
     },
 
     // 确认用户名修改
-    confirmUsernameChange() {
-      if (!this.currentRow || !this.currentRow.username) {
-        console.log("当前行数据:", this.currentRow); // 调试输出
-        this.$message.error("操作失败，未找到用户信息！");
+    async updateUsername(row) {
+      if (!this.newUsername || this.newUsername.trim() === "") {
+        this.$message.error("用户名不能为空！");
         return;
       }
 
-      if (!this.newUsername.trim()) {
-        this.$message.error("新用户名不能为空！");
-        return;
-      }
-      // 发送请求到后端
-      axios
-        .put("http://127.0.0.1:8000/update_user", {
-          current_username: this.currentRow.username,    // 用户ID
-          new_username: this.newUsername // 新用户名
-        })
-        .then(() => {
-          this.$message.success("用户名更新成功！");
-          this.cancelPopover(); // 关闭 Popover
-          this.fetchUsers();    // 重新获取用户数据
-        })
-        .catch((error) => {
-          console.error("用户名更新失败:", error);
-          this.$message.error("更新失败，请稍后再试！");
+      try {
+        const response = await axios.put("http://127.0.0.1:8000/update_username", {
+          current_username: row.username, // 当前用户名
+          new_username: this.newUsername, // 新用户名
         });
+        this.$message.success(response.data.message || "用户名更新成功！");
+        this.cancelPopover(); // 关闭 Popover
+        this.fetchUsers(); // 刷新用户数据
+      } catch (error) {
+        console.error("用户名更新失败:", error.response?.data || error);
+        this.$message.error(
+          error.response?.data?.error || "用户名更新失败，请稍后重试！"
+        );
+      }
     },
 
     // 确认邮箱修改
-    confirmEmailChange() {
-        if (!this.currentRow || !this.currentRow.username) {
-          console.log("当前行数据:", this.currentRow); // 调试输出
-          this.$message.error("操作失败，未找到用户信息！");
-          return;
-        }
-
-      if (!this.newEmail.trim()) {
-        this.$message.error("新邮箱不能为空！");
+    async updateEmail(row) {
+      if (!this.newEmail || this.newEmail.trim() === "") {
+        this.$message.error("邮箱不能为空！");
         return;
       }
-      // 发送请求到后端
-      axios
-        .put("http://127.0.0.1:8000/update_user", {
-          current_username: this.currentRow.username,
-          new_email: this.newEmail     // 新邮箱
-        })
-        .then(() => {
-          this.$message.success("邮箱更新成功！");
-          this.cancelPopover(); // 关闭 Popover
-          this.fetchUsers();    // 重新获取用户数据
-        })
-        .catch((error) => {
-          console.error("邮箱更新失败:", error);
-          this.$message.error("更新失败，请稍后再试！");
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(this.newEmail)) {
+        this.$message.error("请输入有效的邮箱地址！");
+        return;
+      }
+
+      try {
+        const response = await axios.put("http://127.0.0.1:8000/update_email", {
+          current_username: row.username, // 当前用户名
+          new_email: this.newEmail, // 新邮箱
         });
+        this.$message.success(response.data.message || "邮箱更新成功！");
+        this.cancelPopover(); // 关闭 Popover
+        this.fetchUsers(); // 刷新用户数据
+      } catch (error) {
+        console.error("邮箱更新失败:", error.response?.data || error);
+        this.$message.error(
+          error.response?.data?.error || "邮箱更新失败，请稍后重试！"
+        );
+      }
     },
 
-    confirmRoleChange() {
-      if (!this.currentRow || !this.currentRow.username) {
-        console.log("当前行数据:", this.currentRow); // 调试输出
-        this.$message.error("操作失败，未找到用户信息！");
-        return;
-      }
+    // 更新角色
+    async updateRole(row) {
+      const newRole = row.role === "教师" ? "学生" : "教师"; // 切换角色
 
-      // 判断角色是否需要修改
-      const newRole = this.currentRow.role === "教师" ? "学生" : "教师";
-      if (!newRole) {
-        this.$message.error("未选择新的角色！");
-        return;
-      }
-
-      // 发送请求到后端
-      axios
-        .put("http://127.0.0.1:8000/update_user", {
-          current_username: this.currentRow.username, // 当前用户名
+      try {
+        const response = await axios.put("http://127.0.0.1:8000/update_role", {
+          current_username: row.username, // 当前用户名
           role: newRole, // 新角色
-        })
-        .then(() => {
-          this.$message.success(`角色更新成功！${this.currentRow.username} 的新角色为 ${newRole}`);
-          this.cancelPopover(); // 关闭 Popover
-          this.fetchUsers(); // 重新获取用户数据
-        })
-        .catch((error) => {
-          console.error("角色更新失败:", error);
-          this.$message.error("更新失败，请稍后再试！");
         });
-    }
+        this.$message.success(response.data.message || "角色更新成功！");
+        this.cancelPopover(); // 关闭 Popover
+        this.fetchUsers(); // 刷新用户数据
+      } catch (error) {
+        console.error("角色更新失败:", error.response?.data || error);
+        this.$message.error(
+          error.response?.data?.error || "角色更新失败，请稍后重试！"
+        );
+      }
+    },
+
+    // 更新密码
+    async updatePassword(row) {
+      if (!this.newPassword || this.newPassword.trim() === "") {
+        this.$message.error("密码不能为空！");
+        return;
+      }
+
+      try {
+        const response = await axios.put("http://127.0.0.1:8000/update_password", {
+          current_username: row.username, // 当前用户名
+          new_password: this.newPassword, // 新密码
+        });
+        this.$message.success(response.data.message || "密码更新成功！");
+        this.cancelPopover(); // 关闭 Popover
+        this.fetchUsers(); // 刷新用户数据
+      } catch (error) {
+        console.error("密码更新失败:", error.response?.data || error);
+        this.$message.error(
+          error.response?.data?.error || "密码更新失败，请稍后重试！"
+        );
+      }
+    },
   },
   mounted() {
     this.fetchUsers(); // 初始化获取用户数据

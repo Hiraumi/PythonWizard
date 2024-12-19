@@ -117,6 +117,7 @@ def get_users():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+'''
 # 更新用户信息接口
 @app.route('/update_user', methods=['PUT'])
 def update_user():
@@ -159,7 +160,19 @@ def update_user():
             user.email = new_email
 
         # 检查角色是否合法，并更新角色
-        if new_role is not None:
+        if new_role is not None:  # 仅在新角色被明确传递时才进行校验
+            # 将英文值转换为中文值
+            if new_role.lower() == 'teacher':
+                new_role = '教师'
+            elif new_role.lower() == 'student':
+                new_role = '学生'
+
+        # 校验角色值是否合法
+        if 'role' in data:
+            new_role = data['role']
+            # 校验角色值是否合法
+            if new_role not in ['教师', '学生']:
+                return jsonify({'error': '角色值不合法，仅支持 “教师” 和 “学生”'}), 400
             user.role = True if new_role == '教师' else False
 
         # 提交数据库更改
@@ -170,6 +183,127 @@ def update_user():
         db.session.rollback()
         print("Error while updating user:", str(e))
         return jsonify({'error': str(e)}), 500
+'''
+
+# 更新用户名
+@app.route('/update_username', methods=['PUT'])
+def update_username():
+    data = request.get_json()
+    print("Received data for username update:", data)
+
+    current_username = data.get('current_username')
+    new_username = data.get('new_username')
+
+    # 检查必要字段
+    if not current_username or not new_username:
+        return jsonify({'error': '当前用户名或新用户名不能为空'}), 400
+
+    try:
+        # 查询当前用户
+        user = User.query.filter_by(username=current_username).first()
+        if not user:
+            return jsonify({'error': '用户不存在'}), 404
+
+        # 检查新用户名是否已被使用
+        existing_user = User.query.filter_by(username=new_username).first()
+        if existing_user:
+            return jsonify({'error': '新用户名已被使用'}), 409
+
+        # 更新用户名
+        user.username = new_username
+        db.session.commit()
+        print(f"用户名更新成功: {current_username} -> {new_username}")
+        return jsonify({'message': '用户名更新成功'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print("Error while updating username:", str(e))
+        return jsonify({'error': str(e)}), 500
+
+# 更新邮箱
+@app.route('/update_email', methods=['PUT'])
+def update_email():
+    data = request.get_json()
+    print("Received data for email update:", data)
+
+    current_username = data.get('current_username')
+    new_email = data.get('new_email')
+
+    # 检查必要字段
+    if not current_username or not new_email:
+        return jsonify({'error': '当前用户名或新邮箱不能为空'}), 400
+
+    try:
+        # 查询当前用户
+        user = User.query.filter_by(username=current_username).first()
+        if not user:
+            return jsonify({'error': '用户不存在'}), 404
+
+        # 检查新邮箱是否已被使用
+        existing_email = User.query.filter_by(email=new_email).first()
+        if existing_email:
+            return jsonify({'error': '新邮箱已被使用'}), 409
+
+        # 更新邮箱
+        user.email = new_email
+        db.session.commit()
+        print(f"邮箱更新成功: {user.username} -> {new_email}")
+        return jsonify({'message': '邮箱更新成功'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print("Error while updating email:", str(e))
+        return jsonify({'error': str(e)}), 500
+
+# 更新角色
+@app.route('/update_role', methods=['PUT'])
+def update_role():
+    data = request.get_json()
+    print("Received data for role update:", data)
+
+    current_username = data.get('current_username')
+    new_role = data.get('role')
+
+    # 检查必要字段
+    if not current_username or new_role not in ['教师', '学生']:
+        return jsonify({'error': '当前用户名或角色值不合法'}), 400
+
+    try:
+        # 查询当前用户
+        user = User.query.filter_by(username=current_username).first()
+        if not user:
+            return jsonify({'error': '用户不存在'}), 404
+
+        # 更新角色
+        user.role = True if new_role == '教师' else False
+        db.session.commit()
+        print(f"角色更新成功: {user.username} -> {'教师' if user.role else '学生'}")
+        return jsonify({'message': '角色更新成功'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print("Error while updating role:", str(e))
+        return jsonify({'error': str(e)}), 500
+
+# 更新密码接口
+@app.route('/update_password', methods=['PUT'])
+def update_password():
+    data = request.get_json()
+    print("Received data for password update:", data)
+
+    current_username = data.get('current_username')
+    new_password = data.get('new_password')
+
+    if not current_username or not new_password:
+        return jsonify({'error': '用户名或密码不能为空！'}), 400
+
+    user = User.query.filter_by(username=current_username).first()
+    if not user:
+        return jsonify({'error': '用户不存在！'}), 404
+
+    # 加密新密码并更新
+    hashed_password = generate_password_hash(new_password, method='sha256')
+    user.password = hashed_password
+    db.session.commit()
+    print(f"密码更新成功: {current_username}")
+    return jsonify({'message': '密码更新成功！'}), 200
 
 # 删除用户接口
 @app.route('/delete_user/<int:user_id>', methods=['DELETE'])
