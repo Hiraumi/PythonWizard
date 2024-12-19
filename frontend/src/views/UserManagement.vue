@@ -293,7 +293,7 @@ export default {
         try {
           console.log("确认删除用户：", row.username);
           // 调用后端删除接口
-          await axios.delete(`http://127.0.0.1:8000/delete_user/${row.username}`);
+          await axios.delete(`http://127.0.0.1:8000/user/delete_user/${row.username}`);
           this.$message.success(`用户 ${row.username} 已成功删除！`);
           this.fetchUsers(); // 刷新用户数据
         } catch (error) {
@@ -322,7 +322,7 @@ export default {
       setTimeout(() => {
         // 调用后端接口
         axios
-        .get("http://127.0.0.1:8000/users", {
+        .get("http://127.0.0.1:8000/user/users", {
           params: {
             page: this.pagination.currentPage,
             page_size: this.pagination.pageSize,
@@ -382,7 +382,7 @@ export default {
       }
 
       try {
-        const response = await axios.put("http://127.0.0.1:8000/update_username", {
+        const response = await axios.put("http://127.0.0.1:8000/user/update_username", {
           current_username: row.username, // 当前用户名
           new_username: this.newUsername, // 新用户名
         });
@@ -411,7 +411,7 @@ export default {
       }
 
       try {
-        const response = await axios.put("http://127.0.0.1:8000/update_email", {
+        const response = await axios.put("http://127.0.0.1:8000/user/update_email", {
           current_username: row.username, // 当前用户名
           new_email: this.newEmail, // 新邮箱
         });
@@ -431,7 +431,7 @@ export default {
       const newRole = row.role === "教师" ? "学生" : "教师"; // 切换角色
 
       try {
-        const response = await axios.put("http://127.0.0.1:8000/update_role", {
+        const response = await axios.put("http://127.0.0.1:8000/user/update_role", {
           current_username: row.username, // 当前用户名
           role: newRole, // 新角色
         });
@@ -454,7 +454,7 @@ export default {
       }
 
       try {
-        const response = await axios.put("http://127.0.0.1:8000/update_password", {
+        const response = await axios.put("http://127.0.0.1:8000/user/update_password", {
           current_username: row.username, // 当前用户名
           new_password: this.newPassword, // 新密码
         });

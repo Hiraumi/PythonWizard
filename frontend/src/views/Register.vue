@@ -157,7 +157,7 @@ export default {
         if (valid) {
           try {
             // 发送注册请求到后端
-            const response = await axios.post("http://127.0.0.1:8000/register", {
+            const response = await axios.post("http://127.0.0.1:8000/auth/register", {
               username: this.registerForm.username,
               email: this.registerForm.email,
               password: this.registerForm.password,

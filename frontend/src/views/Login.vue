@@ -93,7 +93,7 @@ export default {
 
       try {
         // 发送登录请求到后端
-        const response = await axios.post("http://127.0.0.1:8000/login", {
+        const response = await axios.post("http://127.0.0.1:8000/auth/login", {
           email: this.loginForm.username, // 注意后端使用 email 字段
           password: this.loginForm.password,
         });
