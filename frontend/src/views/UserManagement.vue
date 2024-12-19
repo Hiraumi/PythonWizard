@@ -160,28 +160,53 @@
       <el-table-column label="操作" width="120" align="center">
         <template #default="scope">
           <!-- 删除按钮 -->
-          <el-tooltip
-            v-if="scope.row.username === currentUsername"
-            content="不能删除自己的账户"
-            effect="light"
+          <el-popover
+            v-model:visible="visiblePopover[scope.row.id]"
             placement="top"
+            width="250"
+            trigger="click"
           >
-            <el-button
-              size="default"
-              type="danger"
-              :disabled="scope.row.username === currentUsername"
-            >
-              删除
-            </el-button>
-          </el-tooltip>
-          <el-button
-            v-else
-            size="default"
-            type="danger"
-            @click="deleteUser(scope.row)"
-          >
-            删除
-          </el-button>
+            <p><el-icon><Warning /></el-icon>确定要删除用户 <b>{{ scope.row.username }}</b> 吗？</p>
+            <p style="
+              color: orangered;
+              background: #FCF1F0;
+              "><el-icon size="24px"><WarnTriangleFilled /></el-icon><b>请注意</b>：此操作不可撤销！</p>
+            <div style="text-align: right;">
+              <el-button
+                size="default"
+                type="danger"
+                @click="confirmDeleteUser(scope.row)"
+              >
+                <el-icon><Delete /></el-icon>确认删除
+              </el-button>
+              <el-button size="default" type="primary" @click="cancelPopover_for_delete(scope.row.id)"><el-icon><Close /></el-icon>取消删除</el-button>
+            </div>
+            <template #reference>
+              <!-- 删除按钮 -->
+              <el-tooltip
+                v-if="scope.row.username === currentUsername"
+                content="不能删除自己的账户"
+                effect="light"
+                placement="top"
+              >
+                <el-button
+                  size="default"
+                  type="danger"
+                  :disabled="scope.row.username === currentUsername"
+                >
+                  删除
+                </el-button>
+              </el-tooltip>
+              <el-button
+                v-else
+                size="default"
+                type="danger"
+                @click.stop="showPopover(scope.row, 'delete')"
+              >
+                删除
+              </el-button>
+            </template>
+          </el-popover>
         </template>
       </el-table-column>
     </el-table>
@@ -198,14 +223,16 @@
       @size-change="handleSizeChange"
       @current-change="handlePageChange"
     />
+
   </div>
 
-  <!-- 确认删除对话框 -->
+  <!-- 确认删除对话框
   <el-dialog
     title="确认删除"
     v-model:visible="deleteDialogVisible"
     width="400px"
     :close-on-click-modal="false"
+    :z-index="3000"
   >
     <p>确定要删除用户 <b>{{ userToDelete.username }}</b> 吗？</p>
     <p style="color: orangered; font-weight: bold;">此操作不可撤销，请慎重！</p>
@@ -215,7 +242,7 @@
         <el-button type="danger" @click="confirmDeleteUser">确认删除</el-button>
       </span>
     </template>
-  </el-dialog>
+  </el-dialog>-->
 </template>
 
 <style>
@@ -236,12 +263,12 @@
 </style>
 
 <script>
-import { Edit } from "@element-plus/icons-vue";
+import {Close, Delete, Edit, Warning, WarnTriangleFilled} from "@element-plus/icons-vue";
 import axios from "axios";
 
 export default {
   name: "StaffDashboard",
-  components: { Edit },
+  components: {Warning, WarnTriangleFilled, Delete, Close, Edit },
   data() {
     return {
       users: [], // 用户数据
@@ -261,35 +288,21 @@ export default {
     };
   },
   methods: {
-    // 点击删除按钮时，弹出确认对话框
-    deleteUser(user) {
-      this.userToDelete = user; // 记录需要删除的用户
-      this.deleteDialogVisible = true; // 显示确认对话框
-    },
-
     // 确认删除用户
-    confirmDeleteUser() {
-      if (!this.userToDelete || !this.userToDelete.username) {
-        this.$message.error("无法找到需要删除的用户！");
-        return;
-      }
-
-      // 调用后端删除接口
-      axios
-        .delete(`http://127.0.0.1:8000/delete_user/${this.userToDelete.username}`)
-        .then(() => {
-          this.$message.success(`用户 ${this.userToDelete.username} 已成功删除！`);
-          this.fetchUsers(); // 重新加载用户数据
-        })
-        .catch((error) => {
-          console.error("删除用户失败:", error);
+      async confirmDeleteUser(row) {
+        try {
+          console.log("确认删除用户：", row.username);
+          // 调用后端删除接口
+          await axios.delete(`http://127.0.0.1:8000/delete_user/${row.username}`);
+          this.$message.success(`用户 ${row.username} 已成功删除！`);
+          this.fetchUsers(); // 刷新用户数据
+        } catch (error) {
+          console.error("删除用户失败:", error.response?.data || error);
           this.$message.error("删除失败，请稍后重试！");
-        })
-        .finally(() => {
-          this.deleteDialogVisible = false; // 关闭对话框
-          this.userToDelete = null; // 清空待删除用户信息
-        });
-    },
+        } finally {
+          this.cancelPopover(row.id); // 关闭 Popover
+        }
+      },
 
     // 页数变化
     handlePageChange(page) {
@@ -346,13 +359,19 @@ export default {
       } else if (type === "email") {
         this.newEmail = row.email || ""; // 初始化邮箱
       } else if (type === "role") {
-        this.currentRow = row; // 设置当前行，供角色切换使用
+        // this.currentRow = row; // 这个不知道有啥用
       }
     },
 
     // 关闭 Popover
     cancelPopover() {
       this.visiblePopover = {}; // 清空状态
+    },
+
+    cancelPopover_for_delete(rowId) {
+      if (this.visiblePopover[rowId]) {
+        this.visiblePopover[rowId] = false;
+      }
     },
 
     // 确认用户名修改

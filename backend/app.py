@@ -306,19 +306,19 @@ def update_password():
     return jsonify({'message': '密码更新成功！'}), 200
 
 # 删除用户接口
-@app.route('/delete_user/<int:user_id>', methods=['DELETE'])
-def delete_user(user_id):
-    try:
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': '用户不存在'}), 404
+@app.route('/delete_user/<username>', methods=['DELETE'])
+def delete_user(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': '用户不存在！'}), 404
 
+    try:
         db.session.delete(user)
         db.session.commit()
-        return jsonify({'message': f'用户 {user.username} 已删除'}), 200
+        return jsonify({'message': f'用户 {username} 已成功删除！'}), 200
     except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        print(f"删除用户失败: {e}")
+        return jsonify({'error': '删除失败，请稍后重试！'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
