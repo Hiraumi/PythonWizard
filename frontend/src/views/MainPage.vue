@@ -100,9 +100,16 @@ export default {
 <style scoped>
 .main-page {
   height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 64px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -110,6 +117,7 @@ export default {
   background-color: #5a7f75;
   color: #fff;
   font-size: 16px;
+  z-index: 1000;
 }
 
 .header-left {
@@ -132,9 +140,19 @@ export default {
 }
 
 .aside {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  height: calc(100vh - 64px);
+  width: 200px;
   background-color: #E5EDEB;
   color: #333;
-  position: relative;
+  z-index: 999;
+  transition: width 0.3s;
+}
+
+.aside[style*='64px'] {
+  width: 64px;
 }
 
 .collapse-btn {
@@ -145,7 +163,15 @@ export default {
 }
 
 .main {
+  margin-top: 64px;
+  margin-left: 200px;
   background-color: #f0f2f5;
   padding: 20px;
+  min-height: calc(100vh - 64px);
+  transition: margin-left 0.3s;
+}
+
+.aside[style*='64px'] + .main{
+  margin-top: 64px;
 }
 </style>

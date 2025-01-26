@@ -4,6 +4,7 @@ from flask_cors import CORS
 from backend.routes.auth_routes import auth_bp
 from backend.models import db  # 导入数据库实例和用户模型
 from backend.routes.user_routes import user_bp
+from backend.routes.run_code_routes import run_code_bp  # 引入 run_code 路由
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +23,7 @@ with app.app_context():
 # 注册路由蓝图
 app.register_blueprint(auth_bp, url_prefix='/auth')  # 认证相关接口
 app.register_blueprint(user_bp, url_prefix='/user')  # 用户管理相关接口
+app.register_blueprint(run_code_bp)  # 注册 /run_code 路由
 
 # 首页接口
 @app.route('/')

@@ -1,7 +1,12 @@
 {
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
-    "axios": "^1.7.9"
+    "@pyodide/pyodide": "^0.17.1",
+    "axios": "^1.7.9",
+    "element-plus": "^2.9.1",
+    "monaco-editor": "^0.52.2",
+    "monaco-editor-vue3": "^0.1.10",
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "@vue/cli-service": "^5.0.8"

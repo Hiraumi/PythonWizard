@@ -9,6 +9,7 @@ import AppExams from '@/views/Exams.vue'
 import MainPageStaff from '@/views/MainPageStaff.vue';
 import StaffDashboard from '@/views/StaffDashboard.vue';
 import UserManagement from '@/views/UserManagement.vue';
+import OnCoding from "@/views/OnCoding.vue";
 
 const routes = [
   {
@@ -29,6 +30,9 @@ const routes = [
       },
       {
         path: 'coding', name: 'Coding', component: AppCoding,
+      },
+      {
+        path: 'oncoding', name: 'OnCoding', component: OnCoding,
       },
       {
         path: 'exams', name: 'Exams', component: AppExams,

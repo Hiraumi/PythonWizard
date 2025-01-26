@@ -232,17 +232,6 @@ export default {
   width: 100%;
 }
 
-/* 调整输入框与标签的间距 */
-.register-form .el-form-item {
-  margin-bottom: 10px; /* 减小间距 */
-}
-
-.register-form .el-form-item .el-form-item__label {
-  color: #ffffff; /* 标签文字颜色设为白色 */
-  margin-bottom: 5px; /* 标签与文本框之间的间距 */
-  font-size: 14px; /* 可根据需要调整字体大小 */
-}
-
 .register-button {
   width: 100%;
   background-color: #5a7f75;
@@ -268,11 +257,6 @@ export default {
 
 .back-to-login:hover {
   color: #5a7f75;
-}
-
-.back-to-login .el-button {
-  color: #ffffff; /* 文字颜色设为白色 */
-  font-size: 14px;
 }
 
 .footer-info {
