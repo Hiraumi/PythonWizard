@@ -18,7 +18,7 @@
         <!--TODO: 换成高亮语法的-->
         <el-input
           v-model="codeInput"
-          :rows="20"
+          :rows="15"
           type="textarea"
           placeholder="请输入Python代码"
           class="code-input"
@@ -43,15 +43,49 @@
         </el-card>
       </div>
     </div>
+
+    <!-- 询问AI区域 -->
+    <div>
+      <h3 class="panel-title">
+        <el-icon><HelpFilled /></el-icon>询问AI
+        <el-popover
+          placement="top"
+          width="400"
+          trigger="click"
+          title="提示"
+        >
+          <template #reference>
+            <el-icon class="help-icon" style="cursor: pointer; margin-left: 5px;">
+              <QuestionFilled />
+            </el-icon>
+          </template>
+          请先选择你需要的帮助类别，再输入一些具体问题（如“为什么这里必须用半角”等；当然也可以不输），点击提交即可获取答案。
+        </el-popover>
+      </h3>
+      <div class="ai-input-row">
+        <el-select size="large" placeholder="选择功能" style="width: 200px"></el-select>
+        <el-input size="large" placeholder="请输入向AI提问的补充信息（可选）"></el-input>
+        <el-button size="large" color="#5a7f75">提交</el-button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import {ArrowLeft, CaretRight, Compass, EditPen, RefreshLeft, Tickets} from "@element-plus/icons-vue";
+import {
+  ArrowLeft,
+  CaretRight,
+  Compass,
+  EditPen,
+  HelpFilled,
+  QuestionFilled,
+  RefreshLeft,
+  Tickets
+} from "@element-plus/icons-vue";
 
 export default {
   name: "OnCoding",
-  components: {Compass, EditPen, Tickets, ArrowLeft, CaretRight, RefreshLeft },
+  components: {QuestionFilled, HelpFilled, Compass, EditPen, Tickets, ArrowLeft, CaretRight, RefreshLeft },
   data() {
     return {
       codeInput: "", // 用户输入的代码
@@ -143,5 +177,16 @@ export default {
   font-family: monospace;
   font-size: 14px;
   color: #333;
+}
+
+.help-icon {
+  font-size: 16px;
+  color: #5a7f75;
+}
+
+.ai-input-row {
+  display: flex; /* 使用 Flex 布局 */
+  align-items: center; /* 垂直居中 */
+  gap: 10px; /* 控件之间的间距 */
 }
 </style>
